@@ -1,6 +1,6 @@
 use std::ops;
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Money {
     quantity: i64,
 }
@@ -24,6 +24,26 @@ impl ops::Sub<Money> for Money {
     fn sub(self, rhs: Money) -> Self::Output {
         Money { quantity: self.quantity - rhs.quantity }
     }
+}
+
+pub fn lossless_divide(dividend: Money, divisor: u64) -> Vec<Money> {
+    let mut v: Vec<Money> = vec![];
+    for n in 1..divisor {
+        v.push(Money { quantity: (dividend.quantity / divisor as i64)})
+    }
+    v.push(Money { quantity:
+            (dividend.quantity / divisor as i64)
+            + (dividend.quantity % divisor as i64)
+    });
+    v
+}
+
+pub fn sum(elements: Vec<Money>) -> Money {
+    let mut s: Money = Money { quantity: 0 };
+    for n in 0..elements.len() {
+        s = s + elements[n];
+    }
+    s
 }
 
 /// Create a `Money` object from dollar cent representation
@@ -111,5 +131,36 @@ mod test {
         let m2 = money_from(999, 99);
 
         assert_eq!(m1 + m2, Money { quantity: 999_999_999_50 + 999_99 })
+    }
+
+    #[test]
+    fn test_sum_like_large_sub() {
+        let m1 = money_from(999_999_999,50);
+        let m2 = money_from(999, 99);
+
+        assert_eq!(sum(vec![m1, m2]), Money { quantity: 999_999_999_50 + 999_99 })
+    }
+
+    #[test]
+    fn test_sum_3_terms() {
+        let m1 = money_from(999_999_999,50);
+        let m2 = money_from(999, 99);
+        let m3 = money_from(950, 99);
+
+        assert_eq!(sum(vec![m1, m2, m3]), Money { quantity: 999_999_999_50 + 999_99 + 950_99 })
+    }
+
+    #[test]
+    fn test_lossless_divide_no_remainder() {
+        let m1 = money_from(3,00);
+
+        assert_eq!(sum(lossless_divide(m1, 2)), m1);
+    }
+
+    #[test]
+    fn test_lossless_divide_with_remainder() {
+        let m1 = money_from(42,57);
+
+        assert_eq!(sum(lossless_divide(m1, 2)), m1);
     }
 }
